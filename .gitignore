@@ -2,3 +2,5 @@
 *.sym
 *.vs
 *.DS_Store
+*.prg
+*.o
