@@ -1,1 +1,4 @@
 *.txt
+*.sym
+*.vs
+*.DS_Store
