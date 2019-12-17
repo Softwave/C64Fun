@@ -21,7 +21,7 @@ draw_text:
 	ldx #$00
 draw_loop:
 	lda msg,x // Load the memory location of msg, plus x, into a 
-	sta $05e0,x // Put a into memory location 05e0 + x
+	sta $05e0,x // Put a into memory location 05e0 + x to show on screen
 	inx // Increment x, this is our index 
 	cpx #$28 // Compare x to 40 (our message is 40 chars long)
 	bne draw_loop // If it's not, go back to draw loop, otherwise continue
