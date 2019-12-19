@@ -11,7 +11,7 @@ start:
 	sta $0286 // Make text white 
 	jsr $e544 // Clear the screen 
 	jsr draw_text // Jump to the draw_text sub
-	jmp * 
+	rts // Return to main subroutine use jmp * if u want to freeze there
 
 // Our 40-character wide message 
 msg:
