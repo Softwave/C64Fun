@@ -11,9 +11,9 @@ start:
 
 // Numbers to multiply 
 num1:
-    .byte 5
+    .byte 8
 num2:
-    .byte 12
+    .byte 5
 
 mul:
     lda #$00
@@ -32,4 +32,9 @@ end:
     tax 
     lda #$00
     jsr $bdcd 
+    lda #8 // Reset the numbers for next program run 
+    sta num1
+    lda #5
+    sta num2
+
     rts 
