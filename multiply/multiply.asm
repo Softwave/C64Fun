@@ -1,7 +1,8 @@
 // Multiply two 8-bit numbers and then print the result to the screen
 // https://codebase64.org/doku.php?id=base:8bit_multiplication_8bit_product
 
-.var x = 6
+// Variables so we can quickly change what numbers to multiply 
+.var x = 21
 .var y = 10
 
 BasicUpstart2(start)
@@ -9,6 +10,7 @@ BasicUpstart2(start)
 * = $1000
 
 start:
+    jsr $e544
     jsr mul 
     rts 
 
