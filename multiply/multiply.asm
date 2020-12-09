@@ -1,6 +1,9 @@
 // Multiply two 8-bit numbers and then print the result to the screen
 // https://codebase64.org/doku.php?id=base:8bit_multiplication_8bit_product
 
+.var x = 6
+.var y = 10
+
 BasicUpstart2(start)
 
 * = $1000
@@ -11,9 +14,9 @@ start:
 
 // Numbers to multiply 
 num1:
-    .byte 8
+    .byte x
 num2:
-    .byte 5
+    .byte y
 
 mul:
     lda #$00
@@ -32,9 +35,9 @@ end:
     tax 
     lda #$00
     jsr $bdcd 
-    lda #8 // Reset the numbers for next program run 
+    lda #x // Reset the numbers for next program run 
     sta num1
-    lda #5
+    lda #y
     sta num2
 
     rts 
