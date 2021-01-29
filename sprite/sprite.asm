@@ -4,6 +4,11 @@
     * = $4000
 
 start:
+    ldx #$00
+    stx $d020
+    stx $d021 
+    ldx #$01
+    stx $0286
     jsr $e544 // Clear the screen 
     lda #$80
     sta $07f8 // Sprite data at $2000 
@@ -18,9 +23,17 @@ start:
     lda #$64
     sta $d001
 
-    // Make the sprite red 
-    lda #$02
-    sta $d027 
+    // Set multicolor mode 
+    lda #$01
+    sta $d01c
+
+    // Set the sprite colors
+    lda #$04
+    sta $d025
+    lda #$06
+    sta $d026 
+    lda #$0e
+    sta $d027
 
 loop:
 delay:
@@ -29,17 +42,17 @@ delay:
     bne delay   
 moveup: 
     lda $dc00 
-    and #$01 
+    and #%00000001
     bne movedown 
-    dec $d001  
+    dec $d001 
 movedown:
     lda $dc00
-    and #$02
+    and #%00000010
     bne moveleft
     inc $d001 
 moveleft:
     lda $dc00
-    and #$04
+    and #%00000100
     bne moveright 
     dec $d000
 checkbitleft: 
@@ -61,7 +74,7 @@ leftbounds:
     stx $d000
 moveright:     
     lda $dc00
-    and #$08
+    and #%00001000
     bne button
     inc $d000
 checkbitright: 
@@ -81,23 +94,20 @@ rightbounds:
     sta $d010
     ldx #$01
     stx $d000
-
-
-
 button:
     lda $dc00
-    and #$10
+    and #%00010000
     bne done 
     inc $d020 
 done:
     jmp loop
 
     * = $2000
-    .byte $00,$7c,$00,$00,$82,$00,$01,$01
-    .byte $00,$02,$00,$80,$04,$00,$40,$08
-    .byte $00,$20,$10,$00,$10,$1f,$ff,$f0
-    .byte $3f,$ff,$f8,$7f,$ff,$fc,$7f,$ff
-    .byte $fc,$7f,$ff,$fc,$3f,$ff,$f8,$1f
-    .byte $ff,$f0,$00,$00,$00,$00,$00,$00
     .byte $00,$00,$00,$00,$00,$00,$00,$00
-    .byte $00,$00,$00,$00,$00,$00,$00,$06
+    .byte $00,$00,$00,$00,$00,$00,$00,$00
+    .byte $00,$00,$00,$aa,$00,$02,$aa,$80
+    .byte $0a,$aa,$a0,$2a,$aa,$a8,$15,$55
+    .byte $54,$3f,$ff,$fc,$2a,$aa,$a8,$0a
+    .byte $aa,$a0,$00,$55,$00,$00,$00,$00
+    .byte $00,$00,$00,$00,$00,$00,$00,$00
+    .byte $00,$00,$00,$00,$00,$00,$00,$8e
