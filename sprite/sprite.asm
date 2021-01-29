@@ -88,17 +88,6 @@ checkbitright:
     bne rightbounds
     lda #1
     sta $d010
-    //ldx $d000  
-    //cpx #1
-    //bne rightbounds
-    //lda #1
-    //sta $d010
-
-    //ldx $d000 
-    //cpx #255
-    //bne leftbounds
-    //lda #0
-    //sta $d010
 rightbounds:
     ldx $d010
     cpx #1
@@ -118,7 +107,7 @@ button:
 done:
     jmp loop
 
-    * = $2100
+    * = $2000
     .byte $00,$00,$00,$00,$00,$00,$00,$00
     .byte $00,$00,$00,$00,$00,$00,$00,$00
     .byte $00,$00,$00,$aa,$00,$01,$dd,$c0
