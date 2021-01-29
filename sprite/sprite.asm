@@ -1,7 +1,7 @@
     // Move a sprite on the screen with a joystick 
     BasicUpstart2(start)
 
-    * = $1000
+    * = $4000
 
 start:
     jsr $e544 // Clear the screen 
@@ -13,7 +13,6 @@ start:
     sta $d015
 
     // Set x and y position 
-    //lda #$80
     lda #$a0
     sta $d000
     lda #$64
@@ -25,14 +24,14 @@ start:
 
 loop:
 delay:
-    lda #$ff // Delay, check if the raster beam is at line 255 
-    cmp $d012 // Only do stuff when the raster beam is on line 255
-    bne delay  // This is to lower the framerate 
-moveup:
-    lda $dc00
-    and #$01
+    lda #$ff 
+    cmp $d012 
+    bne delay   
+moveup: 
+    lda $dc00 
+    and #$01 
     bne movedown 
-    dec $d001 
+    dec $d001  
 movedown:
     lda $dc00
     and #$02
@@ -43,13 +42,13 @@ moveleft:
     and #$04
     bne moveright 
     dec $d000
-checkbitleft:
-    ldx $d000
+checkbitleft: 
+    ldx $d000 
     cpx #255
     bne leftbounds
     lda #0
     sta $d010
-leftbounds:
+leftbounds: 
     ldx $d000
     cpx #1
     bne moveright
@@ -60,13 +59,13 @@ leftbounds:
     sta $d010
     ldx #$40
     stx $d000
-moveright:
+moveright:     
     lda $dc00
     and #$08
     bne button
     inc $d000
-checkbitright:
-    ldx $d000
+checkbitright: 
+    ldx $d000  
     cpx #1
     bne rightbounds
     lda #1
