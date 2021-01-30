@@ -5,7 +5,7 @@
     * = $4000
 
 start:
-    ldx #$14        // Set screen, border and text colors  
+    ldx #$06        // Set screen, border and text colors  
     stx $d020 
     ldx #$00
     stx $d021 
