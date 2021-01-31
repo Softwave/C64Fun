@@ -12,6 +12,10 @@ start:
     ldx #$00
     stx $d020
     stx $d021 
+
+    // Debug
+    jmp mooscreen1
+
 loadtitle:  
     jsr $e544
     ldx #$00
@@ -48,6 +52,45 @@ hwscreen:
     ldx #$0a
     stx $d021 
     jsr $e544
+
+    // Setup the homeworld sprites squidlet and ufo
+    lda #%00000011
+    sta $d015 
+    // Set multicolor mode for squidlet and UFO
+    lda #%00000011
+    sta $d01c 
+    //Set sprite pointers 
+    lda #$88
+    sta $07f8
+    //
+    lda #$80
+    sta $07f9 
+
+    // Set squidlet position
+    lda #$50
+    sta spr0_x
+    lda #$d5 
+    sta spr0_y
+    // Set ufo position
+    lda #$ff
+    sta spr1_x 
+    lda #$d5 
+    sta spr1_y 
+
+    // Global multicolor sprite colors 
+    lda #$04 // Purple         
+    sta $d025
+    lda #$06 // Blue 
+    sta $d026
+    // Set squidlet color 
+    lda #$0e 
+    sta $d027  
+    // Set UFO color 
+    lda #$0e 
+    sta $d028 
+
+
+    // Load the homeworld map 
     ldx #$00
 lhwloop:
     lda homeworld+2,x // Load the first bank of the map 
@@ -72,13 +115,104 @@ lhwloop:
     inx
     bne lhwloop
     // Check if player fires to move to next screen 
-hwloop:
-    lda $dc00
-    and #%00010001
+
+gotinufo:
+    lda inufo
+    cmp #1 
     bne hwloop 
+    // Play sound or do something here  
+    
+
+hwloop:
+hwdelay:
+    lda #$ff 
+    cmp $d012 
+    bne hwdelay
+
+    // Check if in ufo and make ufo go up 
+    lda inufo 
+    cmp #1 
+    bne hwcol 
+    dec spr1_y 
+zoomsnd:
+    ldx #15
+    stx $d418 
+    ldx 0
+    stx $d405 
+    ldx #240
+    stx $d406 
+    ldx #17
+    stx $d404 
+    //
+    ldx #0
+    ldy #0
+zoomsndloop:
+    iny
+    cpy #7 
+    bne zoomsndloop
+zoomsndloop2:
+    inx 
+    stx $d401
+    cpx #20
+    bne zoomsndloop
+    
+//zoomsndloop2:
+//    cpx $ff
+//    bne zoomsndloop
+//    stx $d401 
+//    inx    
+donezoomsndloop:
+    ldx #6
+    stx $d404 
+    
+
+    // Check if ufo is at 0, if so, go to the next screen
+    lda spr1_y
+    cmp #0
+    beq quithomeworld
+
+    // Check if player gets in their UFO  
+hwcol:
+    lda #%00000011
+    cmp $d01e
+    bne sqdleft 
+    // Disable player sprite
+    lda #%00000010
+    sta $d015 
+    lda #0
+    sta spr0_x
+    sta spr0_y 
+    lda #1 
+    sta inufo 
+    jmp gotinufo 
+
+quithomeworld:
+    // cleanup 
+    lda #0
+    sta $d015 
+    sta spr0_x
+    sta spr0_y
+    sta spr1_x 
+    sta spr1_y
+    jmp mooscreen1
+
+sqdleft:
+    lda $dc00 
+    and #%00000100
+    bne sqdright 
+    dec spr0_x
+sqdright:
+    lda $dc00
+    and #%00001000
+    bne donehw
+    inc spr0_x
+    jmp hwloop
+
+donehw:
+    jmp hwloop
 
 mooscreen1:
-    // Start game mode 
+    // Landing on the moo world  
     ldx #$06
     stx $d020
     ldx #$00
@@ -103,7 +237,7 @@ mooscreen1:
     // Set ufo position
     lda #$a0 
     sta spr0_x 
-    lda #$64 
+    lda #50
     sta spr0_y 
     // Set cow position
     lda #$50
@@ -182,7 +316,7 @@ delay:
 checkcol: 
     lda #%00000011
     cmp $d01e 
-    bne moveup 
+    bne checklanded 
     // Disable the cow sprite 
     lda #%00000001
     sta $d015
@@ -192,6 +326,25 @@ checkcol:
     lda #1 
     sta haswon // We won the game! 
     jmp wewon  
+
+// Check if we have landed on the moo planet and are alive 
+checklanded:
+    lda haslanded
+    cmp #1 
+    beq moveup 
+    lda #$64
+landonmoo: 
+landonmoodelay:
+    ldy #$ff           
+    cpy $d012          
+    bne landonmoo
+    // Go down and play sound 
+    inc spr0_y
+    cmp spr0_y 
+    bne landonmoo
+    ldx #1
+    stx haslanded 
+    
 
 // Controls         
 moveup: 
@@ -397,10 +550,19 @@ mooworld:
 .byte 4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
 .byte 4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
 
+inufo:
+    .byte 0 
+
 haswon:
     .byte 0 
 
 isbeamingcow:
+    .byte 0 
+
+haslanded:
+    .byte 0 
+
+score:
     .byte 0 
 
 msg:

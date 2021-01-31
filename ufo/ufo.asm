@@ -12,6 +12,10 @@ start:
     ldx #$00
     stx $d020
     stx $d021 
+
+    // Debug
+    jmp mooscreen1
+
 loadtitle:  
     jsr $e544
     ldx #$00
@@ -233,7 +237,7 @@ mooscreen1:
     // Set ufo position
     lda #$a0 
     sta spr0_x 
-    lda #$64 
+    lda #5
     sta spr0_y 
     // Set cow position
     lda #$50
@@ -312,7 +316,7 @@ delay:
 checkcol: 
     lda #%00000011
     cmp $d01e 
-    bne moveup 
+    bne checklanded 
     // Disable the cow sprite 
     lda #%00000001
     sta $d015
@@ -322,6 +326,49 @@ checkcol:
     lda #1 
     sta haswon // We won the game! 
     jmp wewon  
+
+// Check if we have landed on the moo planet and are alive 
+checklanded:
+    lda haslanded
+    cmp #1 
+    beq moveup 
+    lda #$64
+landonmoo: 
+//landonmoodelay:
+//    ldy #$ff           
+//    cpy $d012          
+//    bne landonmoo
+    // Go down and play sound 
+    inc spr0_y
+landsnd:
+    ldx #15
+    stx $d418 
+    ldx 0
+    stx $d405 
+    ldx #240
+    stx $d406 
+    ldx #17
+    stx $d404 
+    //
+    ldx #0
+    ldy #0
+landsndloop:
+    iny
+    cpy #7 
+    bne landsndloop
+landsndloop2:
+    inx 
+    stx $d401
+    cpx #20
+    bne landsndloop   
+donelandsndloop:
+    ldx #6
+    stx $d404 
+    cmp spr0_y 
+    bne landonmoo
+    ldx #1
+    stx haslanded 
+    
 
 // Controls         
 moveup: 
@@ -534,6 +581,9 @@ haswon:
     .byte 0 
 
 isbeamingcow:
+    .byte 0 
+
+haslanded:
     .byte 0 
 
 score:
