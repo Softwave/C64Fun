@@ -130,6 +130,37 @@ hwdelay:
     cmp #1 
     bne hwcol 
     dec spr1_y 
+zoomsnd:
+    ldx #15
+    stx $d418 
+    ldx 0
+    stx $d405 
+    ldx #240
+    stx $d406 
+    ldx #17
+    stx $d404 
+    //
+    ldx #0
+    ldy #0
+zoomsndloop:
+    iny
+    cpy #7 
+    bne zoomsndloop
+zoomsndloop2:
+    inx 
+    stx $d401
+    cpx #20
+    bne zoomsndloop
+    
+//zoomsndloop2:
+//    cpx $ff
+//    bne zoomsndloop
+//    stx $d401 
+//    inx    
+donezoomsndloop:
+    ldx #6
+    stx $d404 
+    
 
     // Check if ufo is at 0, if so, go to the next screen
     lda spr1_y
@@ -169,10 +200,12 @@ sqdleft:
 sqdright:
     lda $dc00
     and #%00001000
-    bne hwloop
+    bne donehw
     inc spr0_x
     jmp hwloop
 
+donehw:
+    jmp hwloop
 
 mooscreen1:
     // Landing on the moo world  
@@ -501,6 +534,9 @@ haswon:
     .byte 0 
 
 isbeamingcow:
+    .byte 0 
+
+score:
     .byte 0 
 
 msg:
