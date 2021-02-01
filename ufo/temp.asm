@@ -7,6 +7,54 @@ BasicUpstart2(start) // We start at $0801
 .const spr0_y = $d001 
 .const spr1_x = $d002 
 .const spr1_y = $d003 
+.const spr2_x = $d004
+.const spr2_y = $d005 
+
+.macro CowRange(spriteX, spriteY, origX, origY) {
+range:
+    ldy #0 
+range1: 
+    iny 
+    dex 
+    cpx spriteX
+    beq beamon 
+    cpy #30 
+    bne range1 
+
+    ldy #0 
+range2: 
+    iny 
+    inx 
+    cpx spriteX
+    beq beamon 
+    cpy #50 
+    bne range2
+
+    jsr landcow 
+beamon:
+    dec spriteY 
+    inc $d020 
+    // We're gonna do this a bunch 
+    ldy #00 
+makesound:
+    ldx #15
+    stx $d418
+    ldx #0
+    stx $d418 
+    iny 
+    cpy #10 
+    bne makesound 
+    jsr done  
+landcow:
+    // Make sure cow is at original starting place 
+    lda origX
+    sta spriteX
+    lda origY 
+    sta spriteY  
+    //jmp done 
+}
+
+
 
 start:
     ldx #$00
@@ -219,12 +267,12 @@ mooscreen1:
     stx $d021 
     jsr $e544 
 
-    // Enable sprites 0 (UFO) and 1 (COW)
-    lda #%00000011
+    // Enable sprites 0 (UFO) and 1 (COW) and 2 (COW)
+    lda #%00000111
     sta $d015 
 
     // Set multicolor mode for both UFO and COW
-    lda #%00000011
+    lda #%00000111
     sta $d01c
 
     // Sprite 0 is at $2000, so set pointer to point to it
@@ -233,6 +281,10 @@ mooscreen1:
     // Sprite 1 is at $2100, so set pointer to point to it
     lda #$84
     sta $07f9 
+    // Sprite 2 is at $2100 also
+    lda #$84 
+    sta $07fa
+
 
     // Set ufo position
     lda #$a0 
@@ -244,6 +296,11 @@ mooscreen1:
     sta spr1_x
     lda #$d5 
     sta spr1_y 
+    // Set cow 2 position
+    lda #$fe 
+    sta spr2_x
+    lda #$d5 
+    sta spr2_y
 
     // Global multicolor sprite colors 
     lda #$04 // Purple         
@@ -256,6 +313,8 @@ mooscreen1:
     // Set cow color
     lda #$01 // White 
     sta $d028 
+    // Set cow2 color
+    sta $d029 
 
     // Load the first mooworld into character memory 
 loadmap:  
@@ -285,23 +344,23 @@ lmloop:
     bne lmloop 
 
     // Display victory text when we win the game 
-wewon: 
-    lda haswon 
-    cmp #$01 
-    bne loop 
-drawtext:
-    ldx #$06
-    stx $d020 
-    ldx #1 
-    stx $0286
-    //jsr $e544   
-    ldx #$00
-drawloop:
-    lda msg,x      
-    sta $0428,x
-    inx            
-    cpx #40        
-    bne drawloop   
+//wewon: 
+//    lda haswon 
+//    cmp #$01 
+//    bne loop 
+//drawtext:
+//    ldx #$06
+//    stx $d020 
+//    ldx #1 
+//    stx $0286
+//    //jsr $e544   
+//    ldx #$00
+//drawloop:
+//    lda msg,x      
+//    sta $0428,x
+//    inx            
+//    cpx #40        
+//    bne drawloop   
     
 
 
@@ -325,14 +384,23 @@ checkcol:
     sta spr1_y
     lda #1 
     sta haswon // We won the game! 
-    jmp wewon 
+    sta score 
+    jmp loop 
+    //jmp wewon 
 
 // Check if the player is at zero, ie: has left the planet  
 checkleftmoo1:
     lda #0
     cmp spr0_y 
     bne checklanded
-    jmp hwscreen    
+quitmooworld:
+    lda #0
+    sta $d015 
+    sta spr0_x
+    sta spr0_y
+    sta spr1_x 
+    sta spr1_y
+    jmp endscreen    
 
 // Check if we have landed on the moo planet and are alive 
 checklanded:
@@ -436,10 +504,11 @@ button:
     lda $dc00
     and #%00010000
     beq done1 
-    jmp landcow
+    jmp cow1range.landcow 
 done1: 
     // First check if the cow is even there and enabled 
-    lda #%00000011
+    // Gotta do this different with two cows 
+    lda #%00000111
     cmp $d015 
     beq cowthere
     jmp done 
@@ -447,52 +516,144 @@ done1:
 cowthere: 
     ldx spr0_x  // See if we're at the same x as cow 
     cpx spr1_x
-    beq beamon
-range:
+    beq overcow1
+    cpx spr2_x // Are we at the same x as cow 2?
+    beq overcow2 
+    ldx #58 
+    stx gotocow2 
+    jsr cow1range.range
+    jsr cow2range.range
 
-    ldy #0 
-range1: 
-    iny 
-    dex 
-    cpx spr1_x
-    beq beamon 
-    cpy #30 
-    bne range1 
+overcow1:
+    jmp cow1range.beamon 
 
-    ldy #0 
-range2: 
-    iny 
-    inx 
-    cpx spr1_x
-    beq beamon 
-    cpy #50 
-    bne range2
-
-    jsr landcow 
-beamon:
-    dec spr1_y 
-    inc $d020 
-    // We're gonna do this a bunch 
-    ldy #00 
-makesound:
-    ldx #15
-    stx $d418
+overcow2:
+    jmp cow2range.beamon
+     
+cow1range: :CowRange(spr1_x, spr1_y)
+    ldx gotocow2
+    cpx #58
+    beq cow2range
+    jmp done 
+cow2range: :CowRange(spr2_x, spr2_y)
     ldx #0
-    stx $d418 
-    iny 
-    cpy #10 
-    bne makesound 
-    jsr done  
-landcow:
-    // Make sure cow is at original starting place 
-    lda #$50
-    sta spr1_x
-    lda #$d5 
-    sta spr1_y 
+    stx gotocow2
+
+//range:
+//
+//    ldy #0 
+//range1: 
+//    iny 
+//    dex 
+//    cpx spr1_x
+//    beq beamon 
+//    cpy #30 
+//    bne range1 
+//
+//    ldy #0 
+//range2: 
+//    iny 
+//    inx 
+//    cpx spr1_x
+//    beq beamon 
+//    cpy #50 
+//    bne range2
+//
+//    jsr landcow 
+//beamon:
+//    dec spr1_y 
+//    inc $d020 
+//    // We're gonna do this a bunch 
+//    ldy #00 
+//makesound:
+//    ldx #15
+//    stx $d418
+//    ldx #0
+//    stx $d418 
+//    iny 
+//    cpy #10 
+//    bne makesound 
+//    jsr done  
+//landcow:
+//    // Make sure cow is at original starting place 
+//    lda #$50
+//    sta spr1_x
+//    lda #$d5 
+//    sta spr1_y 
 
 done:
     // main loop 
     jmp loop
+
+// End screen
+endscreen:
+    ldx #0
+    stx $d020
+    stx $d021 
+    ldx #1
+    stx $0286
+    
+loadendscreen:
+    jsr $e544 
+    ldx #$00
+leloop:
+    lda returnscreen+2,x 
+    sta $0400,x
+    lda #1 
+    sta $d800,x     
+    
+    lda returnscreen+$102,x
+    sta $0500,x
+    lda returnscreen+$4ea,x
+    sta $d900,x
+
+    lda returnscreen+$202,x
+    sta $0600,x
+    lda returnscreen+$5ea,x
+    sta $da00,x
+
+    lda returnscreen+$2ea,x
+    sta $06e8,x
+    lda returnscreen+$6d2,x
+    sta $dae8,x
+    inx
+    // Now put the score in 
+    //ldy score 
+    //sty $04e2
+    bne leloop 
+
+    // Set cursor pos 
+    ldx #5
+    ldy #26 
+    clc 
+    jsr $fff0
+    ldx score
+    lda #0
+    //jsr $ffd2
+    jsr $bdcd 
+endloop:
+    jmp endloop
+
+    
+score:
+    .byte 0
+
+inufo:
+    .byte 0 
+
+haswon:
+    .byte 0 
+
+isbeamingcow:
+    .byte 0 
+
+haslanded:
+    .byte 0 
+
+gotocow2:
+    .byte 0 
+
+
 
     // UFO sprite data 
     * = $2000
@@ -526,6 +687,18 @@ done:
     .byte $11,$10,$01,$11,$10,$01,$11,$10
     .byte $01,$11,$10,$01,$11,$10,$01,$11
     .byte $10,$01,$11,$10,$01,$11,$10,$8e
+
+    // Enemy sprite data 
+    * = $2300
+    enemy:
+    .byte $00,$00,$00,$00,$00,$00,$00,$00
+    .byte $00,$00,$00,$00,$00,$00,$02,$00
+    .byte $00,$0a,$01,$00,$28,$05,$40,$a8
+    .byte $2a,$aa,$a8,$aa,$aa,$aa,$2a,$aa
+    .byte $a0,$00,$00,$00,$00,$00,$00,$00
+    .byte $00,$00,$00,$00,$00,$00,$00,$00
+    .byte $00,$00,$00,$00,$00,$00,$00,$00
+    .byte $00,$00,$00,$00,$00,$00,$00,$82
 
 
 mooworld:
@@ -581,20 +754,8 @@ mooworld:
 .byte 4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
 .byte 4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4
 
-inufo:
-    .byte 0 
 
-haswon:
-    .byte 0 
 
-isbeamingcow:
-    .byte 0 
-
-haslanded:
-    .byte 0 
-
-score:
-    .byte 0 
 
 msg:
 	.text "         the cow was delectable         "
@@ -863,3 +1024,5 @@ returnscreen:
 .byte 14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14
 .byte 14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14
 .byte 14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14
+
+ 

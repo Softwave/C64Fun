@@ -7,6 +7,54 @@ BasicUpstart2(start) // We start at $0801
 .const spr0_y = $d001 
 .const spr1_x = $d002 
 .const spr1_y = $d003 
+.const spr2_x = $d004
+.const spr2_y = $d005 
+
+.macro CowRange(spriteX, spriteY, origX, origY) {
+range:
+    ldy #0 
+range1: 
+    iny 
+    dex 
+    cpx spriteX
+    beq beamon 
+    cpy #30 
+    bne range1 
+
+    ldy #0 
+range2: 
+    iny 
+    inx 
+    cpx spriteX
+    beq beamon 
+    cpy #50 
+    bne range2
+
+    jsr landcow 
+beamon:
+    dec spriteY 
+    inc $d020 
+    // We're gonna do this a bunch 
+    ldy #00 
+makesound:
+    ldx #15
+    stx $d418
+    ldx #0
+    stx $d418 
+    iny 
+    cpy #10 
+    bne makesound 
+    jsr done  
+landcow:
+    // Make sure cow is at original starting place 
+    lda #origX
+    sta spriteX
+    lda #origY 
+    sta spriteY  
+    //jmp done 
+}
+
+
 
 start:
     ldx #$00
@@ -14,7 +62,7 @@ start:
     stx $d021 
 
     // Debug
-    //jmp mooscreen1
+    jmp mooscreen1
 
 loadtitle:  
     jsr $e544
@@ -219,12 +267,12 @@ mooscreen1:
     stx $d021 
     jsr $e544 
 
-    // Enable sprites 0 (UFO) and 1 (COW)
-    lda #%00000011
+    // Enable sprites 0 (UFO) and 1 (COW) and 2 (COW)
+    lda #%00000111
     sta $d015 
 
     // Set multicolor mode for both UFO and COW
-    lda #%00000011
+    lda #%00000111
     sta $d01c
 
     // Sprite 0 is at $2000, so set pointer to point to it
@@ -233,6 +281,10 @@ mooscreen1:
     // Sprite 1 is at $2100, so set pointer to point to it
     lda #$84
     sta $07f9 
+    // Sprite 2 is at $2100 also
+    lda #$84 
+    sta $07fa
+
 
     // Set ufo position
     lda #$a0 
@@ -244,6 +296,11 @@ mooscreen1:
     sta spr1_x
     lda #$d5 
     sta spr1_y 
+    // Set cow 2 position
+    lda #$fe 
+    sta spr2_x
+    lda #$d5 
+    sta spr2_y
 
     // Global multicolor sprite colors 
     lda #$04 // Purple         
@@ -256,6 +313,8 @@ mooscreen1:
     // Set cow color
     lda #$01 // White 
     sta $d028 
+    // Set cow2 color
+    sta $d029 
 
     // Load the first mooworld into character memory 
 loadmap:  
@@ -314,18 +373,40 @@ delay:
 
 // Check if cow and ufo are colliding 
 checkcol: 
-    lda #%00000011
-    cmp $d01e 
-    bne checkleftmoo1 
+    lda $d01e
+    cmp #%00000011 
+    beq checkcolcont 
+    cmp #%00000101
+    beq checkcolmoo2
+    jmp checkleftmoo1
+checkcolcont:
     // Disable the cow sprite 
-    lda #%00000001
+    lda #%11111101
+    and $d015
     sta $d015
     lda #0
     sta spr1_x
     sta spr1_y
-    lda #1 
-    sta haswon // We won the game! 
-    sta score 
+    //lda #1 
+    //sta haswon // We won the game! 
+    inc score 
+    jsr checkleftmoo1
+
+    // Check moo 2
+checkcolmoo2:
+    //lda #%00000101
+    //cmp $d01e 
+    //bne checkleftmoo1
+    //
+    lda #%11111011
+    and $d015 
+    sta $d015
+    lda #0
+    sta spr2_x
+    sta spr2_y
+    //lda #1 
+    //sta haswon // We won the game! 
+    inc score 
     jmp loop 
     //jmp wewon 
 
@@ -445,59 +526,91 @@ button:
     lda $dc00
     and #%00010000
     beq done1 
-    jmp landcow
+    ldx #$99
+    stx gotocow2
+    jmp cow1range.landcow  
 done1: 
     // First check if the cow is even there and enabled 
-    lda #%00000011
-    cmp $d015 
-    beq cowthere
+    // Gotta do this different with two cows 
+    //lda #%00000010
+    //ora #%00000100
+    //cmp $d015 
+    //lda $d015 
+    //beq cowthere
+    jmp cowthere
     jmp done 
     
 cowthere: 
     ldx spr0_x  // See if we're at the same x as cow 
     cpx spr1_x
-    beq beamon
-range:
+    beq overcow1
+    cpx spr2_x // Are we at the same x as cow 2?
+    beq overcow2  
+    jsr cow1range.range
+    jsr cow2range.range
 
-    ldy #0 
-range1: 
-    iny 
-    dex 
-    cpx spr1_x
-    beq beamon 
-    cpy #30 
-    bne range1 
-
-    ldy #0 
-range2: 
-    iny 
-    inx 
-    cpx spr1_x
-    beq beamon 
-    cpy #50 
-    bne range2
-
-    jsr landcow 
-beamon:
-    dec spr1_y 
-    inc $d020 
-    // We're gonna do this a bunch 
-    ldy #00 
-makesound:
-    ldx #15
-    stx $d418
+overcow1:
     ldx #0
-    stx $d418 
-    iny 
-    cpy #10 
-    bne makesound 
-    jsr done  
-landcow:
-    // Make sure cow is at original starting place 
-    lda #$50
-    sta spr1_x
-    lda #$d5 
-    sta spr1_y 
+    stx gotocow2
+    jmp cow1range.beamon 
+
+overcow2:
+    ldx #02 
+    stx gotocow2
+    jmp cow2range.beamon
+     
+cow1range: :CowRange(spr1_x, spr1_y, $50, $d5)
+    ldx gotocow2
+    cpx #02
+    beq cow2range
+    cpx #$99
+    beq cow2range.landcow
+    jsr done 
+cow2range: :CowRange(spr2_x, spr2_y, $fe, $d5)
+    //ldx #0
+    //stx gotocow2
+
+//range:
+//
+//    ldy #0 
+//range1: 
+//    iny 
+//    dex 
+//    cpx spr1_x
+//    beq beamon 
+//    cpy #30 
+//    bne range1 
+//
+//    ldy #0 
+//range2: 
+//    iny 
+//    inx 
+//    cpx spr1_x
+//    beq beamon 
+//    cpy #50 
+//    bne range2
+//
+//    jsr landcow 
+//beamon:
+//    dec spr1_y 
+//    inc $d020 
+//    // We're gonna do this a bunch 
+//    ldy #00 
+//makesound:
+//    ldx #15
+//    stx $d418
+//    ldx #0
+//    stx $d418 
+//    iny 
+//    cpy #10 
+//    bne makesound 
+//    jsr done  
+//landcow:
+//    // Make sure cow is at original starting place 
+//    lda #$50
+//    sta spr1_x
+//    lda #$d5 
+//    sta spr1_y 
 
 done:
     // main loop 
@@ -568,6 +681,9 @@ isbeamingcow:
 haslanded:
     .byte 0 
 
+gotocow2:
+    .byte 0 
+
 
 
     // UFO sprite data 
@@ -602,6 +718,18 @@ haslanded:
     .byte $11,$10,$01,$11,$10,$01,$11,$10
     .byte $01,$11,$10,$01,$11,$10,$01,$11
     .byte $10,$01,$11,$10,$01,$11,$10,$8e
+
+    // Enemy sprite data 
+    * = $2300
+    enemy:
+    .byte $00,$00,$00,$00,$00,$00,$00,$00
+    .byte $00,$00,$00,$00,$00,$00,$02,$00
+    .byte $00,$0a,$01,$00,$28,$05,$40,$a8
+    .byte $2a,$aa,$a8,$aa,$aa,$aa,$2a,$aa
+    .byte $a0,$00,$00,$00,$00,$00,$00,$00
+    .byte $00,$00,$00,$00,$00,$00,$00,$00
+    .byte $00,$00,$00,$00,$00,$00,$00,$00
+    .byte $00,$00,$00,$00,$00,$00,$00,$82
 
 
 mooworld:
