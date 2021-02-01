@@ -9,6 +9,8 @@ BasicUpstart2(start) // We start at $0801
 .const spr1_y = $d003 
 .const spr2_x = $d004
 .const spr2_y = $d005 
+.const spr3_x = $d006 
+.const spr3_y = $d007 
 
 .macro CowRange(spriteX, spriteY, origX, origY, mask) {
 range:
@@ -271,23 +273,26 @@ mooscreen1:
     stx $d021 
     jsr $e544 
 
-    // Enable sprites 0 (UFO) and 1 (COW) and 2 (COW)
-    lda #%00000111
+    // Enable sprites 0 (UFO) and 1 (COW) and 2 (COW) and 3 and 4 (JETS)
+    lda #%00001111
     sta $d015 
 
     // Set multicolor mode for both UFO and COW
-    lda #%00000111
+    lda #%00001111
     sta $d01c
 
     // Sprite 0 is at $2000, so set pointer to point to it
-    lda #$80
+    lda #$2000/64
     sta $07f8 
     // Sprite 1 is at $2100, so set pointer to point to it
-    lda #$84
+    lda #$2100/64
     sta $07f9 
     // Sprite 2 is at $2100 also
-    lda #$84 
+    lda #$2100/64
     sta $07fa
+    // Sprite 3 is at $2300
+    lda #$2300/64
+    sta $07fb 
 
 
     // Set ufo position
@@ -305,6 +310,12 @@ mooscreen1:
     sta spr2_x
     lda #$d5 
     sta spr2_y
+    // Set jet 1 position
+    lda #$50
+    sta spr3_x
+    lda #$50
+    sta spr3_y
+    
 
     // Global multicolor sprite colors 
     lda #$04 // Purple         
@@ -319,6 +330,9 @@ mooscreen1:
     sta $d028 
     // Set cow2 color
     sta $d029 
+    // Set jet color 
+    lda #$02 
+    sta $d02a
 
     // Load the first mooworld into character memory 
 loadmap:  
