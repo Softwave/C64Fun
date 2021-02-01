@@ -9,8 +9,10 @@ BasicUpstart2(start) // We start at $0801
 .const spr1_y = $d003 
 .const spr2_x = $d004
 .const spr2_y = $d005 
+.const spr3_x = $d006 
+.const spr3_y = $d007 
 
-.macro CowRange(spriteX, spriteY, origX, origY) {
+.macro CowRange(spriteX, spriteY, origX, origY, mask) {
 range:
     ldy #0 
 range1: 
@@ -32,6 +34,10 @@ range2:
 
     jsr landcow 
 beamon:
+    lda #mask 
+    and $d015
+    cmp #mask 
+    bne landcow
     dec spriteY 
     inc $d020 
     // We're gonna do this a bunch 
@@ -47,9 +53,9 @@ makesound:
     jsr done  
 landcow:
     // Make sure cow is at original starting place 
-    lda origX
+    lda #origX
     sta spriteX
-    lda origY 
+    lda #origY 
     sta spriteY  
     //jmp done 
 }
@@ -267,23 +273,26 @@ mooscreen1:
     stx $d021 
     jsr $e544 
 
-    // Enable sprites 0 (UFO) and 1 (COW) and 2 (COW)
-    lda #%00000111
+    // Enable sprites 0 (UFO) and 1 (COW) and 2 (COW) and 3 and 4 (JETS)
+    lda #%00001111
     sta $d015 
 
     // Set multicolor mode for both UFO and COW
-    lda #%00000111
+    lda #%00001111
     sta $d01c
 
     // Sprite 0 is at $2000, so set pointer to point to it
-    lda #$80
+    lda #$2000/64
     sta $07f8 
     // Sprite 1 is at $2100, so set pointer to point to it
-    lda #$84
+    lda #$2100/64
     sta $07f9 
     // Sprite 2 is at $2100 also
-    lda #$84 
+    lda #$2100/64
     sta $07fa
+    // Sprite 3 is at $2300
+    lda #$2300/64
+    sta $07fb 
 
 
     // Set ufo position
@@ -301,6 +310,12 @@ mooscreen1:
     sta spr2_x
     lda #$d5 
     sta spr2_y
+    // Set jet 1 position
+    lda #$50
+    sta spr3_x
+    lda #$50
+    sta spr3_y
+    
 
     // Global multicolor sprite colors 
     lda #$04 // Purple         
@@ -315,6 +330,9 @@ mooscreen1:
     sta $d028 
     // Set cow2 color
     sta $d029 
+    // Set jet color 
+    lda #$02 
+    sta $d02a
 
     // Load the first mooworld into character memory 
 loadmap:  
@@ -371,20 +389,46 @@ delay:
     cmp $d012          
     bne delay  
 
+// Move jets 
+movejets:
+    dec spr3_x
+
 // Check if cow and ufo are colliding 
 checkcol: 
-    lda #%00000011
-    cmp $d01e 
-    bne checkleftmoo1 
+    lda $d01e
+    cmp #%00000011 
+    beq checkcolcont 
+    cmp #%00000101
+    beq checkcolmoo2
+    jmp checkleftmoo1
+checkcolcont:
     // Disable the cow sprite 
-    lda #%00000001
+    lda #%11111101
+    and $d015
     sta $d015
     lda #0
     sta spr1_x
     sta spr1_y
-    lda #1 
-    sta haswon // We won the game! 
-    sta score 
+    //lda #1 
+    //sta haswon // We won the game! 
+    inc score 
+    jsr checkleftmoo1
+
+    // Check moo 2
+checkcolmoo2:
+    //lda #%00000101
+    //cmp $d01e 
+    //bne checkleftmoo1
+    //
+    lda #%11111011
+    and $d015 
+    sta $d015
+    lda #0
+    sta spr2_x
+    sta spr2_y
+    //lda #1 
+    //sta haswon // We won the game! 
+    inc score 
     jmp loop 
     //jmp wewon 
 
@@ -504,13 +548,18 @@ button:
     lda $dc00
     and #%00010000
     beq done1 
-    jmp cow1range.landcow 
+    ldx #$99
+    stx gotocow2
+    jmp cow1range.landcow  
 done1: 
     // First check if the cow is even there and enabled 
     // Gotta do this different with two cows 
-    lda #%00000111
-    cmp $d015 
-    beq cowthere
+    //lda #%00000010
+    //ora #%00000100
+    //cmp $d015 
+    //lda $d015 
+    //beq cowthere
+    jmp cowthere
     jmp done 
     
 cowthere: 
@@ -518,26 +567,30 @@ cowthere:
     cpx spr1_x
     beq overcow1
     cpx spr2_x // Are we at the same x as cow 2?
-    beq overcow2 
-    ldx #58 
-    stx gotocow2 
+    beq overcow2  
     jsr cow1range.range
     jsr cow2range.range
 
 overcow1:
+    ldx #0
+    stx gotocow2
     jmp cow1range.beamon 
 
 overcow2:
+    ldx #02 
+    stx gotocow2
     jmp cow2range.beamon
      
-cow1range: :CowRange(spr1_x, spr1_y)
+cow1range: :CowRange(spr1_x, spr1_y, $50, $d5, %00000010)
     ldx gotocow2
-    cpx #58
+    cpx #02
     beq cow2range
-    jmp done 
-cow2range: :CowRange(spr2_x, spr2_y)
-    ldx #0
-    stx gotocow2
+    cpx #$99
+    beq cow2range.landcow
+    jsr done 
+cow2range: :CowRange(spr2_x, spr2_y, $fe, $d5, %00000100)
+    //ldx #0
+    //stx gotocow2
 
 //range:
 //
@@ -652,6 +705,12 @@ haslanded:
 
 gotocow2:
     .byte 0 
+
+cow1canmove:
+    .byte 1
+
+cow2canmove:
+    .byte 1
 
 
 

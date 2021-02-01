@@ -389,6 +389,40 @@ delay:
     cmp $d012          
     bne delay  
 
+// Move jets 
+movejets:
+    dec spr3_x
+checkjetbit: 
+    ldx spr3_x
+    cpx #255 
+    bne leftboundsjet
+    lda $d010 
+    and #%11110111
+    sta $d010 
+leftboundsjet:
+    ldx spr3_x
+    cpx #1
+    bne contjet 
+    lda $d010
+    ora #%00001000
+    cmp $d010 
+    beq contjet // If it's not 0 continue 
+    lda $d010 
+    ora #%00001000
+    sta $d010
+    ldx #89 
+    stx spr3_x
+
+
+
+contjet:
+
+
+    //lda $d010 
+    //ora #%00001000
+    //cmp #%00001000
+    ////sta $d010 
+
 // Check if cow and ufo are colliding 
 checkcol: 
     lda $d01e
@@ -501,45 +535,45 @@ moveleft:
     and #%00000100
     bne moveright 
     dec $d000          
-checkbitleft:          
-    ldx $d000 
-    cpx #255
-    bne leftbounds
-    lda #0
-    sta $d010
-leftbounds: 
-    ldx $d000
-    cpx #1
-    bne moveright
-    ldx $d010
-    cpx #0
-    bne moveright
-    lda #%00000001
-    sta $d010
-    ldx #89             
-    stx $d000
+//checkbitleft:          
+//    ldx $d000 
+//    cpx #255
+//    bne leftbounds
+//    lda #0
+//    sta $d010
+//leftbounds: 
+//    ldx $d000
+//    cpx #1
+//    bne moveright
+//    ldx $d010
+//    cpx #0
+//    bne moveright
+//    lda #%00000001
+//    sta $d010
+//    ldx #89             
+//    stx $d000
 moveright:     
     lda $dc00
     and #%00001000
     bne button
     inc $d000
-checkbitright:          
-    ldx $d000                            
-    cpx #0              
-    bne rightbounds     
-    lda #%00000001      
-    sta $d010           
-rightbounds:
-    ldx $d010
-    cpx #%00000001      
-    bne button         
-    ldx $d000           
-    cpx #89             
-    bne button
-    lda #0              
-    sta $d010           
-    ldx #$01            
-    stx $d000           
+//checkbitright:          
+//    ldx $d000                            
+//    cpx #0              
+//    bne rightbounds     
+//    lda #%00000001      
+//    sta $d010           
+//rightbounds:
+//    ldx $d010
+//    cpx #%00000001      
+//    bne button         
+//    ldx $d000           
+//    cpx #89             
+//    bne button
+//    lda #0              
+//    sta $d010           
+//    ldx #$01            
+//    stx $d000           
 button:
     lda $dc00
     and #%00010000
