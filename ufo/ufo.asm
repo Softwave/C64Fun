@@ -10,7 +10,7 @@ BasicUpstart2(start) // We start at $0801
 .const spr2_x = $d004
 .const spr2_y = $d005 
 
-.macro CowRange(spriteX, spriteY, origX, origY) {
+.macro CowRange(spriteX, spriteY, origX, origY, mask) {
 range:
     ldy #0 
 range1: 
@@ -32,6 +32,10 @@ range2:
 
     jsr landcow 
 beamon:
+    lda #mask 
+    and $d015
+    cmp #mask 
+    bne landcow
     dec spriteY 
     inc $d020 
     // We're gonna do this a bunch 
@@ -559,14 +563,14 @@ overcow2:
     stx gotocow2
     jmp cow2range.beamon
      
-cow1range: :CowRange(spr1_x, spr1_y, $50, $d5)
+cow1range: :CowRange(spr1_x, spr1_y, $50, $d5, %00000010)
     ldx gotocow2
     cpx #02
     beq cow2range
     cpx #$99
     beq cow2range.landcow
     jsr done 
-cow2range: :CowRange(spr2_x, spr2_y, $fe, $d5)
+cow2range: :CowRange(spr2_x, spr2_y, $fe, $d5, %00000100)
     //ldx #0
     //stx gotocow2
 
@@ -683,6 +687,12 @@ haslanded:
 
 gotocow2:
     .byte 0 
+
+cow1canmove:
+    .byte 1
+
+cow2canmove:
+    .byte 1
 
 
 
