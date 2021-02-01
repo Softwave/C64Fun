@@ -534,29 +534,64 @@ moveleft:
     lda $dc00
     and #%00000100
     bne moveright 
-    dec $d000          
-//checkbitleft:          
-//    ldx $d000 
-//    cpx #255
-//    bne leftbounds
-//    lda #0
-//    sta $d010
-//leftbounds: 
-//    ldx $d000
-//    cpx #1
-//    bne moveright
-//    ldx $d010
-//    cpx #0
-//    bne moveright
-//    lda #%00000001
-//    sta $d010
-//    ldx #89             
-//    stx $d000
+    dec $d000  
+checkbitleft:
+    ldx spr0_x
+    cpx #255 
+    bne leftbounds 
+    lda $d010
+    and #%11111110 
+    sta $d010 
+leftbounds:
+    ldx spr0_x
+    cpx #1 
+    bne moveright 
+    lda $d010 
+    ora #%00000001
+    cmp $d010 
+    beq moveright 
+    lda $d010 
+    ora #%00000001
+    sta $d010 
+    ldx #89 
+    stx spr0_x
 moveright:     
     lda $dc00
     and #%00001000
     bne button
     inc $d000
+checkbitright:          
+    ldx $d000                 
+    cpx #0              
+    bne rightbounds     
+    lda #%00000001      
+    sta $d010           
+rightbounds:
+    ldx $d010
+    cpx #%00000001      
+    bne button         
+    ldx $d000           
+    cpx #89             
+    bne button
+    lda #0              
+    sta $d010           
+    ldx #$01            
+    stx $d000           
+
+//rightbounds:
+//    ldx spr0_x
+//    cpx #89 
+//    bne button 
+//    lda $d010 
+//    ora #%00000001
+//    cmp $d010 
+//    beq button 
+//    lda $d010
+//    and #%11111110 
+//    sta $d010 
+//    ldx #1
+//    stx spr0_x
+
 //checkbitright:          
 //    ldx $d000                            
 //    cpx #0              
