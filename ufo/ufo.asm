@@ -48,12 +48,12 @@ beamon:
     // We're gonna do this a bunch 
     ldy #00 
 makesound:
-    ldx #15
+    ldx #67
     stx $d418
     ldx #0
     stx $d418 
     iny 
-    cpy #10 
+    cpy #20 
     bne makesound 
     rts 
 landcow:
@@ -389,26 +389,6 @@ lmloop:
     bne lmloop
     rts 
 
-    // Display victory text when we win the game 
-//wewon: 
-//    lda haswon 
-//    cmp #$01 
-//    bne loop 
-//drawtext:
-//    ldx #$06
-//    stx $d020 
-//    ldx #1 
-//    stx $0286
-//    //jsr $e544   
-//    ldx #$00
-//drawloop:
-//    lda msg,x      
-//    sta $0428,x
-//    inx            
-//    cpx #40        
-//    bne drawloop   
-    
-
 
     // Main loop
 mooscreen1:
@@ -494,7 +474,11 @@ checkcollisions:
     cmp #%00001001
     beq hitjet  
     cmp #%00010001
-    beq hitjet 
+    beq hitjet
+    cmp #%00010010
+    beq jethitcow1
+    cmp #%00010100
+    beq jethitcow2  
     jmp hitcow1end
 hitcow1:
     lda #%11111101
@@ -532,6 +516,22 @@ hitjet:
     sei 
     jmp enddeadscreen
     rts 
+jethitcow1:
+    lda #%11111101
+    and $d015
+    sta $d015
+    lda #0
+    sta spr1_x
+    sta spr1_y
+    rts 
+jethitcow2:
+    lda #%11111011
+    and $d015
+    sta $d015
+    lda #0
+    sta spr1_x
+    sta spr1_y
+    rts
 
 movejets: 
     dec spr3_x
