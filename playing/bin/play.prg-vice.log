@@ -36,13 +36,13 @@ Drive: Finished loading ROM images.
 video_dx9: Failed to prepare for rendering!
 Sound: Available sound devices: dx wmm dummy fs dump wav voc iff aiff mp3 flac ogg soundmovie
 Keyboard: Loading keymap `C:\Users\jcley\Programs\WinVice\C64\win_sym.vkm'.
-AUTOSTART: Autodetecting image type of `ufo.prg'.
+AUTOSTART: Autodetecting image type of `play.prg'.
 Filesystem Image Probe: Error - Import GCR: Unknown GCR image version 48.
-Filesystem Image: Unknown disk image `ufo.prg'.
-Tape: Error - Cannot open file `ufo.prg'
-Error - CRT header invalid.
-CART: 'ufo.prg' is not a valid CRT file.
-AUTOSTART: Loading PRG file `ufo.prg' with autostart disk image.
+Filesystem Image: Unknown disk image `play.prg'.
+Tape: Error - Cannot open file `play.prg'
+Error - could not read CRT header.
+CART: 'play.prg' is not a valid CRT file.
+AUTOSTART: Loading PRG file `play.prg' with autostart disk image.
 AUTOSTART: Turning true drive emulation off.
 AUTOSTART: Turning true drive emulation on.
 AUTOSTART: Resetting the machine to autostart '*'
@@ -50,14 +50,14 @@ Drive 8: RESET.
 Sound: Opened device `dx', speed 44100Hz, fragment size 2.9ms, buffer size 101ms
 reSID: MOS8580, filter on, sampling rate 44100Hz - resampling, pass to 19845Hz
 AUTOSTART: Turning Warp mode on
-AUTOSTART: `ufo.prg' recognized as program/p00 file.
+AUTOSTART: `play.prg' recognized as program/p00 file.
 Main CPU: starting at ($FFFC).
 Main CPU: RESET.
 Drive 8: RESET.
 AUTOSTART: Loading program '*'
 AUTOSTART: Searching for ...
 AUTOSTART: Loading
-AUTOSTART: Entered ROM at $ee74
+AUTOSTART: Entered ROM at $eea0
 AUTOSTART: Ready
 AUTOSTART: Turning Warp mode off
 AUTOSTART: Starting program.
