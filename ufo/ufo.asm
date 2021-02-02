@@ -433,7 +433,27 @@ irq:
     jsr updatecontrols
     jsr checkcollisions 
     jsr beamcow 
+    jsr checkleftplanet 
     jmp $ea31     
+
+checkleftplanet:
+    lda #0 
+    cmp spr0_y
+    bne endleftplanetcheck
+    // Leave the planet 
+    lda #0 
+    sta $d015 
+    sta spr0_x
+    sta spr0_y
+    sta spr1_x 
+    sta spr1_y
+    sta spr2_x
+    sta spr2_y
+    sta spr3_x
+    sta spr3_y
+    jmp endscreen 
+endleftplanetcheck:
+    rts
 
 checkcollisions:
     lda $d01e 
@@ -622,6 +642,55 @@ overcow2:
 cow1range: :CowRange(spr1_x, spr1_y, $50, $d5, %00000010)
 cow2range: :CowRange(spr2_x, spr2_y, $fe, $d5, %00000100)
     
+// End screen
+endscreen:
+    ldx #0
+    stx $d020
+    stx $d021 
+    ldx #1
+    stx $0286
+    
+loadendscreen:
+    jsr $e544 
+    ldx #$00
+leloop:
+    lda returnscreen+2,x 
+    sta $0400,x
+    lda #1 
+    sta $d800,x     
+    
+    lda returnscreen+$102,x
+    sta $0500,x
+    lda returnscreen+$4ea,x
+    sta $d900,x
+
+    lda returnscreen+$202,x
+    sta $0600,x
+    lda returnscreen+$5ea,x
+    sta $da00,x
+
+    lda returnscreen+$2ea,x
+    sta $06e8,x
+    lda returnscreen+$6d2,x
+    sta $dae8,x
+    inx
+    // Now put the score in 
+    //ldy score 
+    //sty $04e2
+    bne leloop 
+
+    // Set cursor pos 
+    ldx #5
+    ldy #26 
+    clc 
+    jsr $fff0
+    ldx score
+    lda #0
+    //jsr $ffd2
+    jsr $bdcd 
+endloop:
+    jmp endloop
+
 score:
     .byte 0
 
