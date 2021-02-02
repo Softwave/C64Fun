@@ -23,7 +23,7 @@ range1:
     cpy #30 
     bne range1 
 
-    ldy #0 
+    ldy #0           
 range2: 
     iny 
     inx 
@@ -32,12 +32,13 @@ range2:
     cpy #50 
     bne range2
 
-    jsr landcow 
+    //jsr landcow
+    rts  
 beamon:
     lda #mask 
     and $d015
     cmp #mask 
-    bne landcow
+    bne endcowrange
     dec spriteY 
     inc $d020 
     // We're gonna do this a bunch 
@@ -50,13 +51,15 @@ makesound:
     iny 
     cpy #10 
     bne makesound 
-    jsr done  
+    rts 
 landcow:
     // Make sure cow is at original starting place 
     lda #origX
     sta spriteX
     lda #origY 
     sta spriteY  
+endcowrange:
+    rts
     //jmp done 
 }
 
@@ -265,7 +268,7 @@ sqdright:
 donehw:
     jmp hwloop
 
-mooscreen1:
+mooscreen1init:
     // Landing on the moo world  
     ldx #$06
     stx $d020
@@ -333,7 +336,9 @@ mooscreen1:
     // Set jet color 
     lda #$02 
     sta $d02a
+    rts
 
+mooscreen1loadworld:
     // Load the first mooworld into character memory 
 loadmap:  
     jsr $e544
@@ -359,7 +364,8 @@ lmloop:
     lda mooworld+$6d2,x
     sta $dae8,x
     inx
-    bne lmloop 
+    bne lmloop
+    rts 
 
     // Display victory text when we win the game 
 //wewon: 
@@ -383,14 +389,83 @@ lmloop:
 
 
     // Main loop
-loop:
-delay:
-    lda #$ff           
-    cmp $d012          
-    bne delay  
+mooscreen1:
+    sei              
+    jsr mooscreen1init
+    jsr mooscreen1loadworld
+    lda #$00                    
+    //sta delay_animation_pointer 
 
-// Move jets 
-movejets:
+    //lda #$01             
+    //sta delay_counter    
+
+    ldy #$7f    
+    sty $dc0d   
+    sty $dd0d   
+    lda $dc0d   
+    lda $dd0d   
+     
+    lda #$01    
+    sta $d01a   
+
+    lda #<irq   
+    ldx #>irq 
+    sta $0314   
+    stx $0315  
+
+    lda #$00    
+    sta $d012
+
+    lda #$06    
+    sta $d020
+
+    cli         
+    jmp * 
+    //lda #$ff           
+    //cmp $d012          
+    //bne delay
+
+irq:
+    dec $d019 
+    // Do stuff 
+    jsr movejets
+    jsr checklanded 
+    jsr updatecontrols
+    jsr checkcollisions 
+    jsr beamcow 
+    jmp $ea31     
+
+checkcollisions:
+    lda $d01e 
+    cmp #%00000011
+    beq hitcow1
+    cmp #%00000101
+    beq takecow2
+    jmp hitcow1end
+hitcow1:
+    lda #%11111101
+    and $d015
+    sta $d015
+    lda #0
+    sta spr1_x
+    sta spr1_y
+    inc score
+hitcow1end:
+    rts 
+takecow2:
+    lda #%11111011
+    and $d015 
+    sta $d015
+    lda #0
+    sta spr2_x
+    sta spr2_y
+    inc score 
+takecow2end:
+    rts
+
+movejets: 
+    dec spr3_x
+    dec spr3_x
     dec spr3_x
 checkjetbit: 
     ldx spr3_x
@@ -402,92 +477,25 @@ checkjetbit:
 leftboundsjet:
     ldx spr3_x
     cpx #1
-    bne contjet 
+    bne jetdone 
     lda $d010
     ora #%00001000
     cmp $d010 
-    beq contjet // If it's not 0 continue 
+    beq jetdone // If it's not 0 continue 
     lda $d010 
     ora #%00001000
     sta $d010
     ldx #89 
     stx spr3_x
+jetdone:
+    rts 
 
-
-
-contjet:
-
-
-    //lda $d010 
-    //ora #%00001000
-    //cmp #%00001000
-    ////sta $d010 
-
-// Check if cow and ufo are colliding 
-checkcol: 
-    lda $d01e
-    cmp #%00000011 
-    beq checkcolcont 
-    cmp #%00000101
-    beq checkcolmoo2
-    jmp checkleftmoo1
-checkcolcont:
-    // Disable the cow sprite 
-    lda #%11111101
-    and $d015
-    sta $d015
-    lda #0
-    sta spr1_x
-    sta spr1_y
-    //lda #1 
-    //sta haswon // We won the game! 
-    inc score 
-    jsr checkleftmoo1
-
-    // Check moo 2
-checkcolmoo2:
-    //lda #%00000101
-    //cmp $d01e 
-    //bne checkleftmoo1
-    //
-    lda #%11111011
-    and $d015 
-    sta $d015
-    lda #0
-    sta spr2_x
-    sta spr2_y
-    //lda #1 
-    //sta haswon // We won the game! 
-    inc score 
-    jmp loop 
-    //jmp wewon 
-
-// Check if the player is at zero, ie: has left the planet  
-checkleftmoo1:
-    lda #0
-    cmp spr0_y 
-    bne checklanded
-quitmooworld:
-    lda #0
-    sta $d015 
-    sta spr0_x
-    sta spr0_y
-    sta spr1_x 
-    sta spr1_y
-    jmp endscreen    
-
-// Check if we have landed on the moo planet and are alive 
 checklanded:
-    lda haslanded
+    lda haslanded 
     cmp #1 
-    beq moveup 
-    lda #$64
-landonmoo: 
-//landonmoodelay:
-//    ldy #$ff           
-//    cpy $d012          
-//    bne landonmoo
-    // Go down and play sound 
+    beq checklandeddone
+    lda #$64 
+landonmoo:
     inc spr0_y
 landsnd:
     ldx #15
@@ -509,7 +517,7 @@ landsndloop2:
     inx 
     stx $d401
     cpx #20
-    bne landsndloop   
+    bne landsndloop
 donelandsndloop:
     ldx #6
     stx $d404 
@@ -517,9 +525,10 @@ donelandsndloop:
     bne landonmoo
     ldx #1
     stx haslanded 
-    
+checklandeddone:
+    rts 
 
-// Controls         
+updatecontrols:
 moveup: 
     lda $dc00          
     and #%00000001     
@@ -576,182 +585,42 @@ rightbounds:
     lda #0              
     sta $d010           
     ldx #$01            
-    stx $d000           
-
-//rightbounds:
-//    ldx spr0_x
-//    cpx #89 
-//    bne button 
-//    lda $d010 
-//    ora #%00000001
-//    cmp $d010 
-//    beq button 
-//    lda $d010
-//    and #%11111110 
-//    sta $d010 
-//    ldx #1
-//    stx spr0_x
-
-//checkbitright:          
-//    ldx $d000                            
-//    cpx #0              
-//    bne rightbounds     
-//    lda #%00000001      
-//    sta $d010           
-//rightbounds:
-//    ldx $d010
-//    cpx #%00000001      
-//    bne button         
-//    ldx $d000           
-//    cpx #89             
-//    bne button
-//    lda #0              
-//    sta $d010           
-//    ldx #$01            
-//    stx $d000           
+    stx $d000
 button:
     lda $dc00
     and #%00010000
-    beq done1 
+    beq donecontrols 
     ldx #$99
     stx gotocow2
-    jmp cow1range.landcow  
-done1: 
-    // First check if the cow is even there and enabled 
-    // Gotta do this different with two cows 
-    //lda #%00000010
-    //ora #%00000100
-    //cmp $d015 
-    //lda $d015 
-    //beq cowthere
-    jmp cowthere
-    jmp done 
-    
-cowthere: 
-    ldx spr0_x  // See if we're at the same x as cow 
+    //jmp cow1range.landcow 
+donecontrols:
+    rts 
+
+beamcow:
+    lda $dc00
+    and #%00010000
+    beq firepressed 
+    jsr cow1range.landcow
+    jsr cow2range.landcow 
+    rts 
+firepressed:
+    ldx spr0_x
     cpx spr1_x
-    beq overcow1
-    cpx spr2_x // Are we at the same x as cow 2?
-    beq overcow2  
-    jsr cow1range.range
-    jsr cow2range.range
-
+    beq overcow1 
+    cpx spr2_x
+    beq overcow2 
+    jsr cow1range 
+    jsr cow2range
+    rts 
 overcow1:
-    ldx #0
-    stx gotocow2
-    jmp cow1range.beamon 
-
+    jmp cow1range 
+    rts
 overcow2:
-    ldx #02 
-    stx gotocow2
-    jmp cow2range.beamon
-     
+    jmp cow2range
+    rts 
+
 cow1range: :CowRange(spr1_x, spr1_y, $50, $d5, %00000010)
-    ldx gotocow2
-    cpx #02
-    beq cow2range
-    cpx #$99
-    beq cow2range.landcow
-    jsr done 
 cow2range: :CowRange(spr2_x, spr2_y, $fe, $d5, %00000100)
-    //ldx #0
-    //stx gotocow2
-
-//range:
-//
-//    ldy #0 
-//range1: 
-//    iny 
-//    dex 
-//    cpx spr1_x
-//    beq beamon 
-//    cpy #30 
-//    bne range1 
-//
-//    ldy #0 
-//range2: 
-//    iny 
-//    inx 
-//    cpx spr1_x
-//    beq beamon 
-//    cpy #50 
-//    bne range2
-//
-//    jsr landcow 
-//beamon:
-//    dec spr1_y 
-//    inc $d020 
-//    // We're gonna do this a bunch 
-//    ldy #00 
-//makesound:
-//    ldx #15
-//    stx $d418
-//    ldx #0
-//    stx $d418 
-//    iny 
-//    cpy #10 
-//    bne makesound 
-//    jsr done  
-//landcow:
-//    // Make sure cow is at original starting place 
-//    lda #$50
-//    sta spr1_x
-//    lda #$d5 
-//    sta spr1_y 
-
-done:
-    // main loop 
-    jmp loop
-
-// End screen
-endscreen:
-    ldx #0
-    stx $d020
-    stx $d021 
-    ldx #1
-    stx $0286
-    
-loadendscreen:
-    jsr $e544 
-    ldx #$00
-leloop:
-    lda returnscreen+2,x 
-    sta $0400,x
-    lda #1 
-    sta $d800,x     
-    
-    lda returnscreen+$102,x
-    sta $0500,x
-    lda returnscreen+$4ea,x
-    sta $d900,x
-
-    lda returnscreen+$202,x
-    sta $0600,x
-    lda returnscreen+$5ea,x
-    sta $da00,x
-
-    lda returnscreen+$2ea,x
-    sta $06e8,x
-    lda returnscreen+$6d2,x
-    sta $dae8,x
-    inx
-    // Now put the score in 
-    //ldy score 
-    //sty $04e2
-    bne leloop 
-
-    // Set cursor pos 
-    ldx #5
-    ldy #26 
-    clc 
-    jsr $fff0
-    ldx score
-    lda #0
-    //jsr $ffd2
-    jsr $bdcd 
-endloop:
-    jmp endloop
-
     
 score:
     .byte 0
