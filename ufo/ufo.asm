@@ -650,8 +650,8 @@ firepressed:
     beq overcow1 
     cpx spr2_x
     beq overcow2 
-    jsr cow1range 
     jsr cow2range
+    jsr cow1range 
     rts 
 overcow1:
     jmp cow1range 
