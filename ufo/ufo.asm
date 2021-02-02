@@ -461,6 +461,8 @@ checkcollisions:
     beq hitcow1
     cmp #%00000101
     beq takecow2
+    cmp #%00001001
+    beq hitjet  
     jmp hitcow1end
 hitcow1:
     lda #%11111101
@@ -482,6 +484,20 @@ takecow2:
     inc score 
 takecow2end:
     rts
+hitjet:
+    lda #0 
+    sta $d015 
+    sta spr0_x
+    sta spr0_y
+    sta spr1_x 
+    sta spr1_y
+    sta spr2_x
+    sta spr2_y
+    sta spr3_x
+    sta spr3_y
+    sei 
+    jmp endscreen
+    rts 
 
 movejets: 
     dec spr3_x
