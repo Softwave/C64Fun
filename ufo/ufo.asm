@@ -457,8 +457,9 @@ checkright:
     cmp spr0_x
     bne notset
 goright:
-    //ldx #1
-    //sta movingright
+    ldx #1
+    sta movingright
+    sei
     jmp mooscreen2
     rts
 checkleft:
@@ -466,8 +467,8 @@ checkleft:
     cmp spr0_x
     bne notset
 goleft:
-    //ldx #0
-    //sta movingright 
+    ldx #0
+    sta movingright 
     jmp mooscreen2 
 notset:
     rts 
@@ -652,17 +653,17 @@ moveup:
     lda $dc00          
     and #%00000001     
     bne movedown       
-    dec $d001          
+    dec spr0_y           
 movedown:
     lda $dc00
     and #%00000010     
     bne moveleft
-    inc $d001          
+    inc spr0_y          
 moveleft:
     lda $dc00
     and #%00000100
     bne moveright 
-    dec $d000  
+    dec spr0_x  
 checkbitleft:
     ldx spr0_x
     cpx #255 
@@ -684,27 +685,42 @@ leftbounds:
     ldx #89 
     stx spr0_x
 moveright:     
-    lda $dc00
+    lda $dc00 
     and #%00001000
-    bne button
-    inc $d000
-checkbitright:          
-    ldx $d000                 
-    cpx #0              
-    bne rightbounds     
-    lda #%00000001      
-    sta $d010           
+    bne button 
+    inc spr0_x
+checkbitright:
+    ldx spr0_x
+    cpx #0
+    bne rightbounds 
+    lda $d010 
+    and #%11111110 
+    sta $d010 
 rightbounds:
-    ldx $d010
-    cpx #%00000001      
-    bne button         
-    ldx $d000           
-    cpx #89             
+    ldx spr0_x
+    cpx #254
     bne button
-    lda #0              
-    sta $d010           
-    ldx #$01            
-    stx $d000
+    lda $d010
+    lda $d010 
+    ora #%00000001
+    cmp $d010 
+    beq button 
+    lda $d010
+    lda $d010 
+    ora #%00000001
+    sta $d010 
+    ldx #1
+    stx spr0_x
+    //ldx $d010
+    //cpx #%00000001      
+    //bne button        
+    //ldx $d000           
+    //cpx #89             
+    //bne button 
+    //lda #0              
+    //sta $d010           
+    //ldx #$01            
+    //stx $d000
 button:
     lda $dc00
     and #%00010000
@@ -713,7 +729,7 @@ button:
     stx gotocow2
     //jmp cow1range.landcow 
 donecontrols:
-    rts 
+    rts  
 
 beamcow:
     lda $dc00
@@ -790,6 +806,31 @@ irq2:
     jsr beamcow 
     jsr checkleftplanet 
     jmp $ea31
+
+checkleftscene2:
+    lda $d010        // If we are on the right side 
+    ora #%00000001
+    cmp $d010 
+    bne checkleft2
+checkright2:
+    lda #86       // If we go off the edge of the right side
+    cmp spr0_x
+    bne notset2
+goright2:
+    ldx #1
+    sta movingright
+    jmp mooscreen2
+    rts
+checkleft2:
+    lda #1
+    cmp spr0_x
+    bne notset2
+goleft2:
+    ldx #0
+    sta movingright 
+    jmp mooscreen2 
+notset2:
+    rts 
 
 mooscreen2init:
     // Enable sprites 0 (UFO) and 1 (COW) and 2 (COW) and 3 and 4 (JETS)
@@ -1017,6 +1058,9 @@ cow1canmove:
 
 cow2canmove:
     .byte 1
+
+movingright:
+    .byte 0 
 
 
 
