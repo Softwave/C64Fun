@@ -432,6 +432,10 @@ irq:
     dec $d019 
     // Do stuff 
     jsr movejets
+    jsr movejets 
+    jsr movejets 
+    jsr movejets
+    jsr movejets
     jsr checklanded 
     jsr updatecontrols
     jsr checkcollisions 
@@ -503,8 +507,6 @@ hitjet:
     rts 
 
 movejets: 
-    dec spr3_x
-    dec spr3_x
     dec spr3_x
 checkjetbit: 
     ldx spr3_x
