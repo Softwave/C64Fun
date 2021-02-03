@@ -2,8 +2,10 @@
 // My first Commodore 64 game 
 // A followup to a small Flash game I made years ago 
 // Warning: Lots of bad code here; I learned as I went 
-
+//.segment Main [sidFiles="test.sid", outPrg="ufo.prg"]
 BasicUpstart2(start) // We start at $0801 
+
+.var music = LoadSid("Music.sid")
 
 .const spr0_x = $d000 
 .const spr0_y = $d001 
@@ -48,7 +50,7 @@ beamon:
     // We're gonna do this a bunch 
     ldy #00 
 makesound:
-    ldx #15 // 15 150
+    ldx #150 // 15 150
     stx $d418
     ldx #0
     stx $d418 
@@ -419,6 +421,7 @@ mooscreen1:
     jsr mooscreen1init
     jsr mooscreen1loadworld
     jsr startrandnumgenerator
+    jsr initmusic
     lda #$00                    
     //sta delay_animation_pointer 
 
@@ -465,11 +468,34 @@ irq:
     jsr movejets2 
     jsr checklanded 
     jsr updatecontrols
+    jsr playmusic
     //jsr checkleftscene
     jsr checkcollisions 
     jsr beamcow 
     jsr checkleftplanet 
-    jmp $ea31 
+    jmp $ea31
+
+
+initmusic:
+    ldx #0
+    ldy #0
+    lda #music.startSong-1
+    jsr music.init 
+    rts 
+
+playmusic:  
+    jsr music.play 
+    rts 
+
+playSndPickup:
+    lda #<Pickup
+    ldy #>Pickup
+    ldx #0
+    jsr music.init+6
+    //jsr #music.startSong
+    rts 
+
+
 
 // Going right
 // 2 - 1 - 3
@@ -591,6 +617,7 @@ hitcow1:
     sta spr1_x
     sta spr1_y
     inc score
+    jsr playSndPickup
 hitcow1end:
     rts 
 takecow2:
@@ -601,6 +628,7 @@ takecow2:
     sta spr2_x
     sta spr2_y
     inc score 
+    jsr playSndPickup
 takecow2end:
     rts
 hitjet:
@@ -1727,3 +1755,10 @@ retrundeadscreen:
 .byte 14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14
 .byte 14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14
 .byte 14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14
+
+*=music.location "Music"
+musicPlace:
+.fill music.size, music.getData(i)
+*=$5b50 "SFX"
+Pickup:
+    .byte $1A,$26,$00,$BC,$11,$BC,$C0,$C3,$C3,$C8,$C8,$20,$00
