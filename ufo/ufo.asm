@@ -441,7 +441,7 @@ irq:
     jsr movejets2 
     jsr checklanded 
     jsr updatecontrols
-    jsr checkleftscene
+    //jsr checkleftscene
     jsr checkcollisions 
     jsr beamcow 
     jsr checkleftplanet 
@@ -472,6 +472,16 @@ goleft:
     jmp mooscreen2 
 notset:
     rts 
+
+leaveToMooWorld1:
+    jsr mooscreen1init
+    jsr mooscreen1loadworld
+    rts 
+
+leaveToMooWorld2:
+    jsr mooscreen2init
+    jsr mooscreen2loadworld
+    rts
 
 checkleftplanet:
     lda #0 
@@ -684,6 +694,8 @@ leftbounds:
     sta $d010 
     ldx #89 
     stx spr0_x
+leaveworldleft:
+    jmp leaveToMooWorld2
 moveright:     
     lda $dc00 
     and #%00001000
@@ -696,31 +708,23 @@ checkbitright:
     lda $d010 
     and #%11111110 
     sta $d010 
+    ldx #2
+    stx spr0_x
+leaveworldright:
+    jmp leaveToMooWorld2
 rightbounds:
     ldx spr0_x
     cpx #254
     bne button
     lda $d010
-    lda $d010 
     ora #%00000001
-    cmp $d010 
-    beq button 
-    lda $d010
+    cmp $d010  
+    beq button  // When we cros middle threshhold 
     lda $d010 
     ora #%00000001
     sta $d010 
     ldx #1
     stx spr0_x
-    //ldx $d010
-    //cpx #%00000001      
-    //bne button        
-    //ldx $d000           
-    //cpx #89             
-    //bne button 
-    //lda #0              
-    //sta $d010           
-    //ldx #$01            
-    //stx $d000
 button:
     lda $dc00
     and #%00010000
