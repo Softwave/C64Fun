@@ -471,10 +471,37 @@ irq:
     jsr playmusic
     //jsr checkleftscene
     jsr checkcollisions 
+    jsr checkPlayerAlive
     jsr beamcow 
     jsr checkleftplanet 
     jmp $ea31
 
+checkPlayerAlive:
+    ldx playerAlive 
+    cpx #7
+    bne playerIsAlive
+playerDead:
+    inc deadTimer 
+    lda deadTimer
+    cmp #180 // 3 seconds 
+    bne nottimetorespawn  
+    lda #0 
+    sta $d015 
+    sta spr0_x
+    sta spr0_y
+    sta spr1_x 
+    sta spr1_y
+    sta spr2_x
+    sta spr2_y
+    sta spr3_x
+    sta spr3_y
+    sta spr4_x
+    sta spr4_y
+    sei 
+    jmp enddeadscreen
+nottimetorespawn:
+playerIsAlive:
+    rts 
 
 initmusic:
     ldx #0
@@ -493,6 +520,13 @@ playSndPickup:
     ldx #0
     jsr music.init+6
     //jsr #music.startSong
+    rts 
+
+playSndBoom:
+    lda #<Boom 
+    ldy #>Boom 
+    ldx #0 
+    jsr music.init+6 
     rts 
 
 
@@ -632,20 +666,28 @@ takecow2:
 takecow2end:
     rts
 hitjet:
-    lda #0 
+    inc $d020 
+    jsr playSndBoom
+    lda $d015 
+    and #%11111110 
     sta $d015 
-    sta spr0_x
-    sta spr0_y
-    sta spr1_x 
-    sta spr1_y
-    sta spr2_x
-    sta spr2_y
-    sta spr3_x
-    sta spr3_y
-    sta spr4_x
-    sta spr4_y
-    sei 
-    jmp enddeadscreen
+    ldx #7
+    stx playerAlive 
+
+    //lda #0 
+    //sta $d015 
+    //sta spr0_x
+    //sta spr0_y
+    //sta spr1_x 
+    //sta spr1_y
+    //sta spr2_x
+    //sta spr2_y
+    //sta spr3_x
+    //sta spr3_y
+    //sta spr4_x
+    //sta spr4_y
+    //sei 
+    //jmp enddeadscreen
     rts 
 jethitcow1:
     lda #%11111101
@@ -1287,6 +1329,8 @@ resetgame:
     stx cow1canmove
     stx cow2canmove
     stx curworld
+    stx deadTimer
+    stx playerAlive 
     jmp start 
 
 score:
@@ -1318,6 +1362,12 @@ movingright:
 
 curworld:
     .byte 0
+
+playerAlive:
+    .byte 1 
+
+deadTimer:
+    .byte 0 
 
 
     // UFO sprite data 
@@ -1762,3 +1812,7 @@ musicPlace:
 *=$5b50 "SFX"
 Pickup:
     .byte $1A,$26,$00,$BC,$11,$BC,$C0,$C3,$C3,$C8,$C8,$20,$00
+
+Boom:
+    .byte $00,$FA,$00,$B8,$81,$A4,$41,$A0,$B4,$81,$98,$93,$90,$98,$92,$90
+    .byte $95,$94,$80,$9D,$9D,$9E,$9D,$9D,$9D,$9D,$00

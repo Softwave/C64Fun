@@ -57,7 +57,7 @@ Drive 8: RESET.
 AUTOSTART: Loading program '*'
 AUTOSTART: Searching for ...
 AUTOSTART: Loading
-AUTOSTART: Entered ROM at $f51e
+AUTOSTART: Entered ROM at $f524
 AUTOSTART: Ready
 AUTOSTART: Turning Warp mode off
 AUTOSTART: Starting program.
