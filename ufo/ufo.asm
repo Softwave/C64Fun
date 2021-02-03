@@ -412,6 +412,8 @@ startrandnumgenerator:
     sta $d40f 
     lda #$80 
     sta $d412
+    lda $d41b 
+    sta seed
     rts 
 
 
@@ -468,6 +470,7 @@ irq:
     jsr movejets2 
     jsr checklanded 
     jsr updatecontrols
+    jsr generateRandomNumbers 
     jsr playmusic
     //jsr checkleftscene
     jsr checkcollisions 
@@ -475,6 +478,18 @@ irq:
     jsr beamcow 
     jsr checkleftplanet 
     jmp $ea31
+
+generateRandomNumbers:
+    // From here: https://codebase64.org/doku.php?id=base:small_fast_8-bit_prng
+    lda seed 
+    beq doEor 
+    asl 
+    bcc noEor 
+doEor:
+    eor #$1d 
+noEor:
+    sta seed 
+    rts 
 
 checkPlayerAlive:
     ldx playerAlive 
@@ -728,7 +743,8 @@ leftboundsjet:
     sta $d010
     ldx #89 
     stx spr3_x
-    ldx $d41b // Load random number 
+    //ldx $d41b // Load random number 
+    ldx seed
     stx spr3_y
 jetdone:
     rts
@@ -1367,6 +1383,12 @@ playerAlive:
     .byte 1 
 
 deadTimer:
+    .byte 0 
+
+seed: 
+    .byte 0
+
+randomNumber:
     .byte 0 
 
 
