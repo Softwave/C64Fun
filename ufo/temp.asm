@@ -276,6 +276,9 @@ donehw:
     jmp hwloop
 
 mooscreen1init:
+    // Set curworld
+    ldx #1
+    stx curworld
     // Landing on the moo world  
     ldx #$06
     stx $d020
@@ -439,13 +442,50 @@ irq:
     jsr movejets2 
     jsr movejets2 
     jsr movejets2 
-    jsr checklanded
-    jsr checkleftscene  
+    jsr checklanded 
     jsr updatecontrols
+    //jsr checkleftscene
     jsr checkcollisions 
     jsr beamcow 
     jsr checkleftplanet 
-    jmp $ea31   
+    jmp $ea31 
+
+// Going right
+// 2 - 1 - 3
+leaveWorldright:
+    lda curworld
+    cmp #1
+    bne LevelCheck2
+    jmp leaveToMooWorld3 
+LevelCheck2:
+    cmp #2 
+    bne LevelCheckLeft3
+    jmp leaveToMooWorld1
+LevelCheck3
+    cmp #3
+    bne loadNone
+    jmp leaveToMooWorld2
+loadNone:
+    rts
+
+// Going left
+// 2 - 1 - 3
+leaveWorldleft:
+    lda curworld
+    cmp #1
+    bne LevelCheckLeft2
+    jmp leaveToMooWorld2 
+LevelCheckLeft2:
+    cmp #2 
+    bne LevelCheckLeft3
+    jmp leaveToMooWorld3 
+LevelCheckLeft3
+    cmp #3
+    bne loadNone2
+    jmp leaveToMooWorld1
+loadNone2:
+    rts 
+
 
 checkleftscene:
     lda $d010        // If we are on the right side 
@@ -455,14 +495,15 @@ checkleftscene:
 checkright:
     lda #86       // If we go off the edge of the right side
     cmp spr0_x
-    bne notset 
+    bne notset
 goright:
     ldx #1
     sta movingright
-    jmp mooscreen3
+    sei
+    jmp mooscreen2
     rts
 checkleft:
-    lda #10
+    lda #1
     cmp spr0_x
     bne notset
 goleft:
@@ -470,7 +511,22 @@ goleft:
     sta movingright 
     jmp mooscreen2 
 notset:
-    rts  
+    rts 
+
+leaveToMooWorld1:
+    jsr mooscreen1init
+    jsr mooscreen1loadworld
+    rts 
+
+leaveToMooWorld2:
+    jsr mooscreen2init
+    jsr mooscreen2loadworld
+    rts
+
+leaveToMooWorld3:
+    jsr mooscreen3init
+    jsr mooscreen3loadworld 
+    rts 
 
 checkleftplanet:
     lda #0 
@@ -652,17 +708,17 @@ moveup:
     lda $dc00          
     and #%00000001     
     bne movedown       
-    dec $d001          
+    dec spr0_y           
 movedown:
     lda $dc00
     and #%00000010     
     bne moveleft
-    inc $d001          
+    inc spr0_y          
 moveleft:
     lda $dc00
     and #%00000100
     bne moveright 
-    dec $d000  
+    dec spr0_x  
 checkbitleft:
     ldx spr0_x
     cpx #255 
@@ -683,28 +739,37 @@ leftbounds:
     sta $d010 
     ldx #89 
     stx spr0_x
+leavewrldleft:
+    jmp leaveWorldleft
 moveright:     
-    lda $dc00
+    lda $dc00 
     and #%00001000
-    bne button
-    inc $d000
-checkbitright:          
-    ldx $d000                 
-    cpx #0              
-    bne rightbounds     
-    lda #%00000001      
-    sta $d010           
-rightbounds:
-    ldx $d010
-    cpx #%00000001      
-    bne button        
-    ldx $d000           
-    cpx #89             
     bne button 
-    lda #0              
-    sta $d010           
-    ldx #$01            
-    stx $d000
+    inc spr0_x
+checkbitright:
+    ldx spr0_x
+    cpx #0
+    bne rightbounds 
+    lda $d010 
+    and #%11111110 
+    sta $d010 
+    ldx #2
+    stx spr0_x
+leavewrldright:
+    jmp leaveWorldright
+rightbounds:
+    ldx spr0_x
+    cpx #254
+    bne button
+    lda $d010
+    ora #%00000001
+    cmp $d010  
+    beq button  // When we cros middle threshhold 
+    lda $d010 
+    ora #%00000001
+    sta $d010 
+    ldx #1
+    stx spr0_x
 button:
     lda $dc00
     and #%00010000
@@ -713,7 +778,7 @@ button:
     stx gotocow2
     //jmp cow1range.landcow 
 donecontrols:
-    rts 
+    rts  
 
 beamcow:
     lda $dc00
@@ -740,20 +805,14 @@ overcow2:
 
 cow1range: :CowRange(spr1_x, spr1_y, $50, $d5, %00000010)
 cow2range: :CowRange(spr2_x, spr2_y, $fe, $d5, %00000100)
-
-
-
+    
 // Moo world screen 2
 mooscreen2:
     sei              
     jsr mooscreen2init
     jsr mooscreen2loadworld
     lda #$00                    
-    //sta delay_animation_pointer 
-
-    //lda #$01             
-    //sta delay_counter    
-
+  
     ldy #$7f    
     sty $dc0d   
     sty $dd0d   
@@ -790,8 +849,8 @@ irq2:
     jsr movejets2 
     jsr movejets2 
     //jsr checklanded 
-    jsr checkleftscene2
-    jsr updatecontrols2
+    //jsr checkleftscene2
+    jsr updatecontrols
     jsr checkcollisions 
     jsr beamcow 
     jsr checkleftplanet 
@@ -801,15 +860,15 @@ checkleftscene2:
     lda $d010        // If we are on the right side 
     ora #%00000001
     cmp $d010 
-    bne notset2
+    bne checkleft2
 checkright2:
     lda #86       // If we go off the edge of the right side
     cmp spr0_x
-    bne notset2 
+    bne notset2
 goright2:
     ldx #1
     sta movingright
-    jmp mooscreen1
+    jmp mooscreen2
     rts
 checkleft2:
     lda #1
@@ -818,21 +877,13 @@ checkleft2:
 goleft2:
     ldx #0
     sta movingright 
-    jmp mooscreen3 
+    jmp mooscreen2 
 notset2:
     rts 
 
-//gotomooscene2:
-//    jmp mooscreen1
-
-
 mooscreen2init:
-    ldx #$06
-    stx $d020
-    ldx #$00
-    stx $d021 
-    jsr $e544
-
+    ldx #2
+    stx curworld 
     // Enable sprites 0 (UFO) and 1 (COW) and 2 (COW) and 3 and 4 (JETS)
     lda #%00011111
     sta $d015 
@@ -856,37 +907,7 @@ mooscreen2init:
     // Sprite 4 is at $2300 also 
     lda #$2300/64 
     sta $07fc  
-
-        // Set ufo position
-    ldx movingright
-    cmp #1
-    //bne comingfromright2
-    //jsr comingfromleft2
-comingfromright2:
-    // coming from the right going left
-    lda #88
-    sta spr0_x
-    lda #$64 
-    sta spr0_y
-    lda $d010
-    ora #%00000001
-    sta $d010
-    //jsr spawnend2
-//comingfromleft2:
-//    lda #244
-//    sta spr0_x 
-//    lda #$64
-//    sta spr0_y
-//    
-//    //lda $d010 
-//    //and #%11111110
-//    //sta $d010
-//    lda $d010 
-//    and #%11111110
-//    sta $d010
-//    jsr spawnend2
-spawnend2: 
-    // Set cow position
+        // Set cow position
     lda #$50
     sta spr1_x
     lda #$d5 
@@ -959,84 +980,14 @@ lmloop2:
     sta $dae8,x
     inx
     bne lmloop2
-    rts  
+    rts
 
-updatecontrols2:
-moveup2: 
-    lda $dc00          
-    and #%00000001     
-    bne movedown2       
-    dec $d001          
-movedown2:
-    lda $dc00
-    and #%00000010     
-    bne moveleft2
-    inc $d001          
-moveleft2:
-    lda $dc00
-    and #%00000100
-    bne moveright2 
-    dec $d000  
-checkbitleft2:
-    ldx spr0_x
-    cpx #255 
-    bne leftbounds2
-    lda $d010
-    and #%11111110 
-    sta $d010 
-leftbounds2:
-    ldx spr0_x
-    cpx #1 
-    bne moveright2 
-    lda $d010 
-    ora #%00000001
-    cmp $d010 
-    beq moveright2 
-    lda $d010 
-    ora #%00000001
-    sta $d010 
-    ldx #89 
-    stx spr0_x
-    //jmp mooscreen3
-moveright2:     
-    lda $dc00
-    and #%00001000
-    bne button2
-    inc $d000
-checkbitright2:          
-    ldx $d000                 
-    cpx #0              
-    bne rightbounds2     
-    lda #%00000001      
-    sta $d010           
-rightbounds2:
-    ldx $d010
-    cpx #%00000001      
-    bne button2         
-    ldx $d000           
-    cpx #89             
-    bne button2
-    lda #0              
-    sta $d010           
-    ldx #$01            
-    stx $d000
-button2:
-    lda $dc00
-    and #%00010000
-    beq donecontrols2 
-    ldx #$99
-    stx gotocow2
-    //jmp cow1range.landcow 
-donecontrols2:
-    rts 
-
-
-// World to the right 
 mooscreen3:
     sei              
     jsr mooscreen3init
     jsr mooscreen3loadworld
     lda #$00                    
+  
     ldy #$7f    
     sty $dc0d   
     sty $dd0d   
@@ -1058,7 +1009,7 @@ mooscreen3:
     sta $d020
 
     cli         
-    jmp *
+    jmp * 
 
 irq3:
     dec $d019 
@@ -1072,239 +1023,16 @@ irq3:
     jsr movejets2 
     jsr movejets2 
     jsr movejets2 
-    //jsr checklanded 
-    //jsr checkleftscene3
-    jsr updatecontrols3
+    jsr updatecontrols
     jsr checkcollisions 
     jsr beamcow 
     jsr checkleftplanet 
     jmp $ea31
 
-checkleftscene3:
-    lda $d010        // If we are on the right side 
-    ora #%00000001
-    cmp $d010 
-    bne checkleft3
-checkright3:
-    lda #86       // If we go off the edge of the right side
-    cmp spr0_x
-    bne notset3 
-goright3:
-    ldx #1
-    sta movingright
-    jmp mooscreen2
-    rts
-checkleft3:
-    lda #1
-    cmp spr0_x
-    bne notset3
-goleft3:
-    ldx #0
-    sta movingright
-    jmp mooscreen1 
-notset3:
-    rts 
-
-mooscreen3init: 
-    ldx #$06
-    stx $d020
-    ldx #$00
-    stx $d021 
-    jsr $e544
-
-    // Enable sprites 0 (UFO) and 1 (COW) and 2 (COW) and 3 and 4 (JETS)
-    lda #%00011111
-    sta $d015 
-
-    // Set multicolor mode for both UFO and COW
-    lda #%00011111
-    sta $d01c
-
-    // Sprite 0 is at $2000, so set pointer to point to it
-    lda #$2000/64
-    sta $07f8 
-    // Sprite 1 is at $2100, so set pointer to point to it
-    lda #$2100/64
-    sta $07f9 
-    // Sprite 2 is at $2100 also
-    lda #$2100/64
-    sta $07fa
-    // Sprite 3 is at $2300
-    lda #$2300/64
-    sta $07fb 
-    // Sprite 4 is at $2300 also 
-    lda #$2300/64 
-    sta $07fc  
-
-    // Set ufo position
-    ldx movingright
-    cmp #1
-    bne comingfromright3
-    jsr comingfromleft3
-comingfromright3:
-    // coming from the right going left
-    lda #89
-    sta spr0_x
-    lda #$64 
-    sta spr0_y
-    lda $d010
-    ora #%00000001
-    sta $d010
-    jsr spawnend3
-comingfromleft3:
-    lda #1
-    sta spr0_x 
-    lda #$64
-    sta spr0_y
-    
-    lda $d010 
-    and #%11111110
-    sta $d010
-    jsr spawnend3
-spawnend3: 
-    // Set cow position
-    lda #$50
-    sta spr1_x
-    lda #$d5 
-    sta spr1_y 
-    // Set cow 2 position
-    lda #$fe 
-    sta spr2_x
-    lda #$d5 
-    sta spr2_y
-    // Set jet 1 position
-    lda #$50
-    sta spr3_x
-    lda #$50
-    sta spr3_y
-    // Set jet 2 position 
-    lda #$19
-    sta spr4_x
-    lda #$a7 
-    sta spr4_y
-    // Jet 2 starts off on the right side of the split 
-    lda $d010
-    ora #%00010000
-    sta $d010 
-
-    // Global multicolor sprite colors 
-    lda #$04 // Purple         
-    sta $d025
-    lda #$06 // Blue 
-    sta $d026 
-    // Set ufo color
-    lda #$0e // Light Blue 
-    sta $d027
-    // Set cow color
-    lda #$01 // White 
-    sta $d028 
-    // Set cow 2 color
-    sta $d029 
-    // Set jet 1 color 
-    lda #$02 
-    sta $d02a
-    // Set jet 2 color 
-    lda #$02 
-    sta $d02b 
-    rts
+mooscreen3init:
 
 mooscreen3loadworld:
-loadmap3:  
-    jsr $e544
-    ldx #$00
-lmloop3:
-    lda mooworldright+2,x // Load the first bank of the map 
-    sta $0400,x
-    lda mooworldright+$3ea,x
-    sta $d800,x     // Load first color bank 
     
-    lda mooworldright+$102,x
-    sta $0500,x
-    lda mooworldright+$4ea,x
-    sta $d900,x
-
-    lda mooworldright+$202,x
-    sta $0600,x
-    lda mooworldright+$5ea,x
-    sta $da00,x
-
-    lda mooworldright+$2ea,x
-    sta $06e8,x
-    lda mooworldright+$6d2,x
-    sta $dae8,x
-    inx
-    bne lmloop3
-    rts  
-
-updatecontrols3:
-moveup3: 
-    lda $dc00          
-    and #%00000001     
-    bne movedown3       
-    dec $d001          
-movedown3:
-    lda $dc00
-    and #%00000010     
-    bne moveleft3
-    inc $d001          
-moveleft3:
-    lda $dc00
-    and #%00000100
-    bne moveright3 
-    dec $d000  
-checkbitleft3:
-    ldx spr0_x
-    cpx #255 
-    bne leftbounds3
-    lda $d010
-    and #%11111110 
-    sta $d010 
-leftbounds3:
-    ldx spr0_x
-    cpx #1 
-    bne moveright3 
-    lda $d010 
-    ora #%00000001
-    cmp $d010 
-    beq moveright3 
-    lda $d010 
-    ora #%00000001
-    sta $d010 
-    ldx #89 
-    stx spr0_x
-    //jmp mooscreen1
-moveright3:     
-    lda $dc00
-    and #%00001000
-    bne button3
-    inc $d000
-checkbitright3:          
-    ldx $d000                 
-    cpx #0              
-    bne rightbounds3     
-    lda #%00000001      
-    sta $d010           
-rightbounds3:
-    ldx $d010
-    cpx #%00000001      
-    bne button3        
-    ldx $d000           
-    cpx #89             
-    bne button3
-    lda #0              
-    sta $d010           
-    ldx #$01            
-    stx $d000
-button3:
-    lda $dc00
-    and #%00010000
-    beq donecontrols3 
-    ldx #$99
-    stx gotocow2
-    //jmp cow1range.landcow 
-donecontrols3:
-    rts
-
 
 // End screen
 endscreen:
@@ -1410,9 +1138,6 @@ resetgame:
     stx cow2canmove
     jmp start 
 
-movingright:
-    .byte 0 
-
 score:
     .byte 0
 
@@ -1437,6 +1162,11 @@ cow1canmove:
 cow2canmove:
     .byte 1
 
+movingright:
+    .byte 0 
+
+curworld:
+    .byte 0
 
 
     // UFO sprite data 

@@ -57,7 +57,34 @@ Drive 8: RESET.
 AUTOSTART: Loading program '*'
 AUTOSTART: Searching for ...
 AUTOSTART: Loading
-AUTOSTART: Entered ROM at $ee6a
+AUTOSTART: Entered ROM at $ee5a
+video_dx9: Failed to prepare for rendering!
+Main CPU: RESET.
+AUTOSTART: Done.
+AUTOSTART: Turning Warp mode off
+AUTOSTART: Turned off.
+Drive 8: RESET.
+Sound: Closing device `dx'
+Sound: Opened device `dx', speed 44100Hz, fragment size 2.9ms, buffer size 101ms
+reSID: MOS6581, filter on, sampling rate 44100Hz - resampling, pass to 19845Hz
+AUTOSTART: Autodetecting image type of `C:\Users\jcley\Documents\GitHub\C64Fun\ufo\bin\ufo.prg'.
+Filesystem Image Probe: Error - Import GCR: Unknown GCR image version 48.
+Filesystem Image: Unknown disk image `C:\Users\jcley\Documents\GitHub\C64Fun\ufo\bin\ufo.prg'.
+Tape: Error - Cannot open file `C:\Users\jcley\Documents\GitHub\C64Fun\ufo\bin\ufo.prg'
+Error - CRT header invalid.
+CART: 'C:\Users\jcley\Documents\GitHub\C64Fun\ufo\bin\ufo.prg' is not a valid CRT file.
+AUTOSTART: Loading PRG file `C:\Users\jcley\Documents\GitHub\C64Fun\ufo\bin\ufo.prg' with autostart disk image.
+AUTOSTART: Turning true drive emulation off.
+AUTOSTART: Turning true drive emulation on.
+AUTOSTART: Resetting the machine to autostart '*'
+AUTOSTART: Turning Warp mode on
+AUTOSTART: `C:\Users\jcley\Documents\GitHub\C64Fun\ufo\bin\ufo.prg' recognized as program/p00 file.
+Main CPU: RESET.
+Drive 8: RESET.
+AUTOSTART: Loading program '*'
+AUTOSTART: Searching for ...
+AUTOSTART: Loading
+AUTOSTART: Entered ROM at $ee5a
 AUTOSTART: Ready
 AUTOSTART: Turning Warp mode off
 AUTOSTART: Starting program.
