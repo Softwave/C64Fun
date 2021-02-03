@@ -48,7 +48,7 @@ beamon:
     // We're gonna do this a bunch 
     ldy #00 
 makesound:
-    ldx #150
+    ldx #15 // 15 150
     stx $d418
     ldx #0
     stx $d418 
@@ -78,7 +78,7 @@ start:
     stx $d021 
 
     // Debug
-    //jmp mooscreen1
+    jmp mooscreen1
 
 loadtitle:  
     jsr $e544
@@ -754,8 +754,12 @@ moveright:
     inc spr0_x
 checkbitright:
     ldx spr0_x
-    cpx #0
+    cpx #86
     bne rightbounds 
+    lda $d010 
+    and #1
+    cmp #1  
+    bne rightbounds
     lda $d010 
     and #%11111110 
     sta $d010 

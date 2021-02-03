@@ -40,6 +40,10 @@ loop:
     bne loop
 
 mainloop:
+    rts 
+
+/*
+mainloop:
     jsr SCNKEY 
     jsr GETIN
 test:
@@ -79,7 +83,7 @@ writescreen:
 end:
     jmp mainloop
 
-
+*/
 op1:
     .byte 10 
 
