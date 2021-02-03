@@ -62,6 +62,8 @@ landcow:
     sta spriteX
     lda #origY 
     sta spriteY  
+    ldx #$06 
+    stx $d020 // Set back to blue 
 endcowrange:
     rts
     //jmp done 
@@ -367,7 +369,10 @@ conthaslanded:
     // Set jet 2 color 
     lda #$02 
     sta $d02b 
+
     rts
+
+
 
 mooscreen1loadworld:
     // Load the first mooworld into character memory 
@@ -398,12 +403,22 @@ lmloop:
     bne lmloop
     rts 
 
+startrandnumgenerator:
+    // Enable random number generation 
+    lda #$ff 
+    sta $d40e 
+    sta $d40f 
+    lda #$80 
+    sta $d412
+    rts 
+
 
     // Main loop
 mooscreen1:
     sei              
     jsr mooscreen1init
     jsr mooscreen1loadworld
+    jsr startrandnumgenerator
     lda #$00                    
     //sta delay_animation_pointer 
 
@@ -643,6 +658,8 @@ leftboundsjet:
     sta $d010
     ldx #89 
     stx spr3_x
+    ldx $d41b // Load random number 
+    stx spr3_y
 jetdone:
     rts
 
